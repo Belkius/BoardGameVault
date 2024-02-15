@@ -6,50 +6,83 @@ from sqlalchemy.orm import Session
 import psycopg2
 from database import Boardgame
 import html
-def parse_game_data(xml_data):
-    game_data = {}
+
+
+# convert=html.unescape()
+
+
+def parse_games_data(xml_data: object):
+    items_data = {}
     root = ET.fromstring(xml_data)
-    for boardgame in root.findall('item'):
-        objectid = int(boardgame.get('id'))
-        print(boardgame.tag)
-        for description in boardgame.findall('thumbnail'):
-            print(description.text)
-        game_data[objectid] = {
-            'objectid': objectid,
-            'type': boardgame.get('type'),
-            'name': boardgame.find('name[@type="primary"]').get('value'),
-            'alternate_names': [],
-            'description': boardgame.find('description').text,
-            'yearpublished': get_data(boardgame, 'yearpublished'),
-            'minplayers': get_data(boardgame, 'minplayers'),
-            'maxplayers': get_data(boardgame, 'maxplayers'),
-            'thumbnail': get_data(boardgame, 'thumbnail')
-
+    for boardgame in root.findall("item"):
+        item_id = int(boardgame.get("id"))
+        items_data[item_id] = {
+            "item_id": item_id,
+            "type": boardgame.get("type"),
+            "name": boardgame.find('name[@type="primary"]').get("value"),
+            "alternate_names": get_all_values_list(boardgame, "name", "alternate"),
+            "description": boardgame.find("description").text,
+            "yearpublished": get_value(boardgame, "yearpublished"),
+            "minplayers": get_value(boardgame, "minplayers"),
+            "maxplayers": get_value(boardgame, "maxplayers"),
+            "playingtime": get_value(boardgame, "playingtime"),
+            "minplaytime": get_value(boardgame, "minplaytime"),
+            "maxplaytime": get_value(boardgame, "maxplaytime"),
+            "age": get_value(boardgame, "minage"),
+            "categories": get_all_values_list(boardgame, "link", "boardgamecategory"),
+            "mechanics": get_all_values_list(boardgame, "link", "boardgamemechanic"),
+            "families": get_all_values_list(boardgame, "link", "boardgamefamily"),
+            "integrations": get_all_values_list(
+                boardgame, "link", "boardgameintegration"
+            ),
+            "implementations": get_all_values_list(
+                boardgame, "link", "boardgameimplementation"
+            ),
+            "designers": get_all_values_list(boardgame, "link", "boardgamedesigner"),
+            "artists": get_all_values_list(boardgame, "link", "boardgameartist"),
+            "publishers": get_all_values_list(boardgame, "link", "boardgamepublisher"),
+            "users_rated": get_value(boardgame, "statistics/ratings/usersrated"),
+            "average_rating": get_value(boardgame, "statistics/ratings/average"),
+            "bayes_average": get_value(boardgame, "statistics/ratings/bayesaverage"),
+            "bgg_rank": get_value(
+                boardgame, 'statistics/ratings/ranks/rank[@type="subtype"]'
+            ),
+            "num_weights": get_value(boardgame, "statistics/ratings/numweights"),
+            "average_weight": get_value(boardgame, "statistics/ratings/averageweight"),
+            "thumbnail": boardgame.find("thumbnail").text,
+            "image": boardgame.find("image").text,
         }
-        for alternate_name in boardgame.findall('name[@type="alternate"]'):
-            game_data[objectid]['alternate_names'].append(alternate_name.get('value'))
+    return items_data
 
 
-    return game_data
+def get_all_values_list(boardgame, tag_name: str, type: str) -> list:
+    all_values_list = []
+    for tag in boardgame.findall(tag_name + f'[@type="{type}"]'):
+        all_values_list.append(tag.get("value"))
+    return all_values_list
 
 
-def get_data(element, tag_name):
+def get_value(element, tag_name):
     try:
-        return element.find(tag_name).get('value')
-    except (AttributeError, TypeError):
+        return element.find(tag_name).get("value")
+    except:
         return None
 
-def insert_game_data(session, game_data):
-    for objectid, data in game_data.items():
-        new_game = Boardgame(**data)
-        session.add(new_game)
+
+def insert_items_data(session, items_data):
+    for id, data in items_data.items():
+        existing_game = session.query(Boardgame).filter_by(item_id=id).first()
+        if not existing_game:
+            new_game = Boardgame(**data)
+            session.add(new_game)
     session.commit()
 
-def get_games_info(game_id: str) -> str:
-    base_url = 'https://www.boardgamegeek.com/xmlapi2/thing'
+
+def get_api_data(game_id: str) -> str:
+    base_url = "https://www.boardgamegeek.com/xmlapi2/thing"
     params = {
-        'id': game_id,
-        'stats': 1,  # Include game statistics
+        "id": game_id,
+        "stats": 1,  # Include game statistics
     }
 
     response = requests.get(base_url, params=params)
@@ -60,44 +93,21 @@ def get_games_info(game_id: str) -> str:
 
         return response.text
     except requests.exceptions.HTTPError as err:
-        return f'HTTP Error: {err}'
+        return f"HTTP Error: {err}"
     except requests.exceptions.RequestException as err:
-        return f'Request Error: {err}'
+        return f"Request Error: {err}"
 
 
-# iii = '1,2,3'
-# jjj = get_games_info(iii)
-# jjjj = ET.fromstring(jjj)
-# for k in jjjj:
-#     print(k.find("description").text.strip())
-def parse_games_info(api_response: str):
-    xml_tree = ET.fromstring(api_response)
+game_ids = "1,2,3,10,24,23,231,231,213,132,21,3,2,23,32,4,543,4,5,356,3"  # Replace with desired IDs or retrieve dynamically
+api_response = get_api_data(game_ids)
+items_data = parse_games_data(api_response)
+print(items_data)
+session = SessionLocal()
+try:
+    insert_items_data(session, items_data)
+finally:
+    session.close()
 
-    for item in xml_tree.findall('item'):
-        print(item.get('id'), item.find('name').get('value'))
-
-game_ids = '1, 2, 3'  # Replace with desired IDs or retrieve dynamically
-api_response = get_games_info(game_ids)
-game_data = parse_game_data(api_response)
-print(game_data)
-# session = SessionLocal()
-# try:
-#     insert_game_data(session, game_data)
-# finally:
-#     session.close()
-
-# y = []
-# for x in range(1, 100):
-#     y.append(str(x))
-# z = ','.join(y)
-# print(z)
-#
-# z = '1, 2'
-#
-# api_response = get_games_info(z)
-#
-# post_games_info(api_response)
-# root = ET.fromstring(get_games_info(z))
 
 # print(root[0][1].text)
 # for child in root:
@@ -105,4 +115,4 @@ print(game_data)
 
 # for boardgame in root.findall('item'):
 #     print(boardgame.get('id'), boardgame.find('name').get('value'))
-# print(get_games_info(z))
+# print(get_api_data(z))

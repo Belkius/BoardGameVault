@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker,declarative_base
+from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy import Column, Boolean, Integer, String, DateTime, ForeignKey, Text, Float
 
-URL_DATABASE =
+URL_DATABASE = 'postgresql://postgres:ShibaInu@localhost:5432/BoardGameVault'
 
 engine = create_engine(URL_DATABASE)
 
@@ -14,9 +14,10 @@ Base = declarative_base()
 class Boardgame(Base):
     __tablename__ = "boardgames"
 
-    objectid = Column(Integer, primary_key=True)
+    item_id = Column(Integer, primary_key=True)
     type = Column(String)
     name = Column(String)
+    owned = Column(Boolean, default=False)
     alternate_names = Column(Text)
     description = Column(Text)
     yearpublished = Column(Integer)
@@ -27,61 +28,31 @@ class Boardgame(Base):
     maxplaytime = Column(Integer)
     age = Column(Integer)
     categories = Column(Text)
+    mechanics = Column(Text)
     families = Column(Text)
     integrations = Column(Text)
     implementations = Column(Text)
     designers = Column(Text)
     artists = Column(Text)
     publishers = Column(Text)
-    usersrated = Column(Integer)
+    users_rated = Column(Integer)
     average_rating = Column(Float)
     bayes_average = Column(Float)
     bgg_rank = Column(Integer)
-    numweights = Column(Integer)
-    average_weights = Column(Float)
+    num_weights = Column(Integer)
+    average_weight = Column(Float)
     thumbnail = Column(String)
     image = Column(String)
 
 
 def create_database_tables():
-    Base = declarative_base()
-
-    class Boardgame(Base):
-        __tablename__ = "boardgames"
-
-        objectid = Column(Integer, primary_key=True)
-        type = Column(String)
-        name = Column(String)
-        alternate_names = Column(Text)
-        description = Column(Text)
-        yearpublished = Column(Integer)
-        minplayers = Column(Integer)
-        maxplayers = Column(Integer)
-        playingtime = Column(Integer)
-        minplaytime = Column(Integer)
-        maxplaytime = Column(Integer)
-        age = Column(Integer)
-        categories = Column(Text)
-        families = Column(Text)
-        integrations = Column(Text)
-        implementations = Column(Text)
-        designers = Column(Text)
-        artists = Column(Text)
-        publishers = Column(Text)
-        usersrated = Column(Integer)
-        average_rating = Column(Float)
-        bayes_average = Column(Float)
-        bgg_rank = Column(Integer)
-        numweights = Column(Integer)
-        average_weights = Column(Float)
-        thumbnail = Column(String)
-        image = Column(String)
-
     Base.metadata.create_all(engine)
 
 
-def insert_game_data(session, game_data):
-    for objectid, data in game_data.items():
-        new_game = Boardgame(**data)
-        session.add(new_game)
+def insert_items_data(session, game_data):
+    for id, data in game_data.items():
+        existing_game = session.query(Boardgame).filter_by(item_id=id).first()
+        if not existing_game:
+            new_game = Boardgame(**data)
+            session.add(new_game)
     session.commit()
