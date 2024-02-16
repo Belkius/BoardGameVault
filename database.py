@@ -56,3 +56,7 @@ def insert_items_data(session, game_data):
             new_game = Boardgame(**data)
             session.add(new_game)
     session.commit()
+
+def get_highest_id(session):
+    highest_id = session.query(Boardgame).order_by(Boardgame.item_id.desc()).first()
+    return highest_id.item_id

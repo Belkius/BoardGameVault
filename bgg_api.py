@@ -4,9 +4,9 @@ import models
 from database import engine, SessionLocal
 from sqlalchemy.orm import Session
 import psycopg2
-from database import Boardgame
+from database import Boardgame, insert_items_data, get_highest_id
 import html
-
+import time
 
 # convert=html.unescape()
 
@@ -19,9 +19,10 @@ def parse_games_data(xml_data: object):
         items_data[item_id] = {
             "item_id": item_id,
             "type": boardgame.get("type"),
-            "name": boardgame.find('name[@type="primary"]').get("value"),
+            # "name": boardgame.find('name[@type="primary"]').get("value"),
+            "name": get_value(boardgame, 'name[@type="primary"]'),
             "alternate_names": get_all_values_list(boardgame, "name", "alternate"),
-            "description": boardgame.find("description").text,
+            "description": None,
             "yearpublished": get_value(boardgame, "yearpublished"),
             "minplayers": get_value(boardgame, "minplayers"),
             "maxplayers": get_value(boardgame, "maxplayers"),
@@ -41,17 +42,25 @@ def parse_games_data(xml_data: object):
             "designers": get_all_values_list(boardgame, "link", "boardgamedesigner"),
             "artists": get_all_values_list(boardgame, "link", "boardgameartist"),
             "publishers": get_all_values_list(boardgame, "link", "boardgamepublisher"),
-            "users_rated": get_value(boardgame, "statistics/ratings/usersrated"),
-            "average_rating": get_value(boardgame, "statistics/ratings/average"),
-            "bayes_average": get_value(boardgame, "statistics/ratings/bayesaverage"),
+            # "users_rated": get_value(boardgame, "statistics/ratings/usersrated"),
+            # "average_rating": get_value(boardgame, "statistics/ratings/average"),
+            # "bayes_average": get_value(boardgame, "statistics/ratings/bayesaverage"),
             "bgg_rank": get_value(
                 boardgame, 'statistics/ratings/ranks/rank[@type="subtype"]'
             ),
-            "num_weights": get_value(boardgame, "statistics/ratings/numweights"),
-            "average_weight": get_value(boardgame, "statistics/ratings/averageweight"),
-            "thumbnail": boardgame.find("thumbnail").text,
-            "image": boardgame.find("image").text,
+            # "num_weights": get_value(boardgame, "statistics/ratings/numweights"),
+            # "average_weight": get_value(boardgame, "statistics/ratings/averageweight"),
+            "thumbnail": None,
+            "image": None,
         }
+        if boardgame.find('description') is not None:
+            items_data[item_id]["description"] = boardgame.find("description").text
+        if items_data[item_id]["bgg_rank"] == "Not Ranked":
+            items_data[item_id]["bgg_rank"] = None
+        if boardgame.find('thumbnail') is not None:
+            items_data[item_id]["thumbnail"] = boardgame.find('thumbnail').text
+        if boardgame.find('image') is not None:
+            items_data[item_id]["image"] = boardgame.find('image').text
     return items_data
 
 
@@ -63,19 +72,15 @@ def get_all_values_list(boardgame, tag_name: str, type: str) -> list:
 
 
 def get_value(element, tag_name):
+    #return element.find(tag_name).get("value") if element.find(tag_name) is not None else None
+    # if element.find(tag_name) is not None:
+    #     return element.find(tag_name).get("value")
+    # else:
+    #     return None
     try:
         return element.find(tag_name).get("value")
     except:
         return None
-
-
-def insert_items_data(session, items_data):
-    for id, data in items_data.items():
-        existing_game = session.query(Boardgame).filter_by(item_id=id).first()
-        if not existing_game:
-            new_game = Boardgame(**data)
-            session.add(new_game)
-    session.commit()
 
 
 def get_api_data(game_id: str) -> str:
@@ -98,15 +103,45 @@ def get_api_data(game_id: str) -> str:
         return f"Request Error: {err}"
 
 
-game_ids = "1,2,3,10,24,23,231,231,213,132,21,3,2,23,32,4,543,4,5,356,3"  # Replace with desired IDs or retrieve dynamically
-api_response = get_api_data(game_ids)
-items_data = parse_games_data(api_response)
-print(items_data)
+def get_new_data(session, last_item_id: int) -> dict:
+    highest_id = last_item_id
+    print(highest_id)
+    while True:
+        item_ids = ",".join([str(id) for id in range(highest_id, highest_id + 100)])
+        api_response = get_api_data(item_ids)
+        items_data = parse_games_data(api_response)
+        print(items_data)
+        if not items_data:
+            break
+        highest_id += 100
+        insert_items_data(session, items_data)
+        keep_server_healthy(2)
+    return items_data
+
+def keep_server_healthy(seconds: int):
+    time.sleep(seconds)
+    #add more health checks here
+
+
 session = SessionLocal()
-try:
-    insert_items_data(session, items_data)
-finally:
-    session.close()
+
+# last_game_id = 414830
+last_game_id = 412199
+get_new_data(session, last_game_id)
+
+
+# game_ids = "1,2,3,10,24,23,231,231,213,132,21,3,2,23,32,4,543,4,5,356,3"
+# api_response = get_api_data(game_ids)
+# items_data = parse_games_data(api_response)
+# print(items_data)
+
+hig=get_highest_id(session)
+print(hig)
+
+# try:
+#     insert_items_data(session, items_data)
+# finally:
+#     session.close()
 
 
 # print(root[0][1].text)
