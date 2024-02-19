@@ -1,6 +1,5 @@
 import requests
 import xml.etree.ElementTree as ET
-import models
 from database import engine, SessionLocal
 from sqlalchemy.orm import Session
 import psycopg2
@@ -21,7 +20,7 @@ def parse_games_data(xml_data: object):
             "type": boardgame.get("type"),
             "name": get_value(boardgame, 'name[@type="primary"]'),
             "alternate_names": get_all_values_list(boardgame, "name", "alternate"),
-            "description": None,
+            "description": '',
             "yearpublished": get_value(boardgame, "yearpublished"),
             "minplayers": get_value(boardgame, "minplayers"),
             "maxplayers": get_value(boardgame, "maxplayers"),
@@ -56,11 +55,11 @@ def parse_games_data(xml_data: object):
             "num_weights": value_to_int(
                 get_value(boardgame, "statistics/ratings/numweights")
             ),
-            "average_weight": value_to_int(
+            "average_weight": value_to_float(
                 get_value(boardgame, "statistics/ratings/averageweight")
             ),
-            "thumbnail": None,
-            "image": None,
+            "thumbnail": '',
+            "image": '',
         }
         if boardgame.find("description") is not None:
             items_data[item_id]["description"] = boardgame.find("description").text
@@ -77,7 +76,7 @@ def value_to_int(value: str) -> int:
             return int(value)
         except ValueError:
             pass
-    return None
+    return -1
 
 
 def value_to_float(value: str) -> float:
@@ -86,7 +85,15 @@ def value_to_float(value: str) -> float:
             return float(value)
         except ValueError:
             pass
-    return None
+    return -1.0
+
+def value_to_str(value: str) -> str:
+    if value:
+        try:
+            return str(value)
+        except ValueError:
+            pass
+    return ""
 
 
 def get_all_values_list(boardgame, tag_name: str, type: str) -> list:
@@ -105,7 +112,7 @@ def get_value(element, tag_name):
     try:
         return element.find(tag_name).get("value")
     except:
-        return None
+        return -1
 
 
 def get_api_data(game_id: str) -> str:
