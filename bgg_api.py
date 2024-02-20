@@ -1,13 +1,9 @@
 import requests
 import xml.etree.ElementTree as ET
-from database import engine, SessionLocal
-from sqlalchemy.orm import Session
-import psycopg2
+from database import SessionLocal
 from database import Boardgame, insert_items_data, get_highest_id
-import html
 import time
 
-# convert=html.unescape()
 
 
 def parse_games_data(xml_data: object):
@@ -20,7 +16,7 @@ def parse_games_data(xml_data: object):
             "type": boardgame.get("type"),
             "name": get_value(boardgame, 'name[@type="primary"]'),
             "alternate_names": get_all_values_list(boardgame, "name", "alternate"),
-            "description": '',
+            "description": "",
             "yearpublished": get_value(boardgame, "yearpublished"),
             "minplayers": get_value(boardgame, "minplayers"),
             "maxplayers": get_value(boardgame, "maxplayers"),
@@ -58,8 +54,8 @@ def parse_games_data(xml_data: object):
             "average_weight": value_to_float(
                 get_value(boardgame, "statistics/ratings/averageweight")
             ),
-            "thumbnail": '',
-            "image": '',
+            "thumbnail": "",
+            "image": "",
         }
         if boardgame.find("description") is not None:
             items_data[item_id]["description"] = boardgame.find("description").text
@@ -87,14 +83,6 @@ def value_to_float(value: str) -> float:
             pass
     return -1.0
 
-def value_to_str(value: str) -> str:
-    if value:
-        try:
-            return str(value)
-        except ValueError:
-            pass
-    return ""
-
 
 def get_all_values_list(boardgame, tag_name: str, type: str) -> list:
     all_values_list = []
@@ -104,30 +92,23 @@ def get_all_values_list(boardgame, tag_name: str, type: str) -> list:
 
 
 def get_value(element, tag_name):
-    # return element.find(tag_name).get("value") if element.find(tag_name) is not None else None
-    # if element.find(tag_name) is not None:
-    #     return element.find(tag_name).get("value")
-    # else:
-    #     return None
-    try:
+    if element.find(tag_name) is not None:
         return element.find(tag_name).get("value")
-    except:
-        return -1
+    return -1
 
 
 def get_api_data(game_id: str) -> str:
     base_url = "https://www.boardgamegeek.com/xmlapi2/thing"
     params = {
         "id": game_id,
-        "stats": 1,  # Include game statistics
+        "stats": 1,
     }
 
     response = requests.get(base_url, params=params)
 
     try:
         response = requests.get(base_url, params=params)
-        response.raise_for_status()  # Raises HTTPError for bad responses
-
+        response.raise_for_status()
         return response.text
     except requests.exceptions.HTTPError as err:
         return f"HTTP Error: {err}"
@@ -142,7 +123,6 @@ def get_new_data(session, last_item_id: int) -> dict:
         item_ids = ",".join([str(id) for id in range(highest_id, highest_id + 100)])
         api_response = get_api_data(item_ids)
         items_data = parse_games_data(api_response)
-        # print(items_data)
         if not items_data:
             break
         highest_id += 100
@@ -162,26 +142,3 @@ session = SessionLocal()
 # last_game_id = 414830
 last_game_id = 412199
 get_new_data(session, last_game_id)
-
-
-# game_ids = "1,2,3,10,24,23,231,231,213,132,21,3,2,23,32,4,543,4,5,356,3"
-# api_response = get_api_data(game_ids)
-# items_data = parse_games_data(api_response)
-# print(items_data)
-
-hig = get_highest_id(session)
-print(hig)
-
-# try:
-#     insert_items_data(session, items_data)
-# finally:
-#     session.close()
-
-
-# print(root[0][1].text)
-# for child in root:
-#     print(child.tag, child.attrib)
-
-# for boardgame in root.findall('item'):
-#     print(boardgame.get('id'), boardgame.find('name').get('value'))
-# print(get_api_data(z))
