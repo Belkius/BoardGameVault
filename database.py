@@ -1,8 +1,15 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from sqlalchemy import Column, Boolean, Integer, String, DateTime, ForeignKey, Text, Float
+from sqlalchemy import (
+    Column,
+    Boolean,
+    Integer,
+    String,
+    Text,
+    Float,
+)
 
-URL_DATABASE = 'postgresql://postgres:ShibaInu@localhost:5432/BoardGameVault'
+URL_DATABASE = "postgresql://postgres:ShibaInu@localhost:5432/BoardGameVault"
 
 engine = create_engine(URL_DATABASE)
 
