@@ -1,6 +1,5 @@
 import requests
 import xml.etree.ElementTree as ET
-from database import SessionLocal
 from database import Boardgame, insert_items_data, get_highest_id
 import time
 
@@ -84,9 +83,9 @@ def value_to_float(value: str) -> float:
     return -1.0
 
 
-def get_all_values_list(boardgame, tag_name: str, type: str) -> list:
+def get_all_values_list(boardgame, tag_name: str, tag_type: str) -> list:
     all_values_list = []
-    for tag in boardgame.findall(tag_name + f'[@type="{type}"]'):
+    for tag in boardgame.findall(tag_name + f'[@type="{tag_type}"]'):
         all_values_list.append(tag.get("value"))
     return all_values_list
 
@@ -104,8 +103,6 @@ def get_api_data(game_id: str) -> str:
         "stats": 1,
     }
 
-    response = requests.get(base_url, params=params)
-
     try:
         response = requests.get(base_url, params=params)
         response.raise_for_status()
@@ -116,9 +113,8 @@ def get_api_data(game_id: str) -> str:
         return f"Request Error: {err}"
 
 
-def get_new_data(session, last_item_id: int) -> dict:
+def get_new_data(last_item_id: int) -> dict:
     highest_id = last_item_id
-    print(highest_id)
     while True:
         item_ids = ",".join([str(id) for id in range(highest_id, highest_id + 100)])
         api_response = get_api_data(item_ids)
@@ -126,7 +122,7 @@ def get_new_data(session, last_item_id: int) -> dict:
         if not items_data:
             break
         highest_id += 100
-        insert_items_data(session, items_data)
+        insert_items_data(items_data)
         keep_server_healthy(2)
     print("done")
     return items_data
@@ -137,8 +133,7 @@ def keep_server_healthy(seconds: int):
     # add more health checks here
 
 
-session = SessionLocal()
-
 # last_game_id = 414830
 last_game_id = 412199
-get_new_data(session, last_game_id)
+get_new_data(last_game_id)
+print(get_highest_id())
