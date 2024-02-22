@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine, MetaData
+from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy import insert, select
 from sqlalchemy import (
     Table,
@@ -13,6 +14,8 @@ from sqlalchemy import (
 URL_DATABASE = "postgresql://postgres:ShibaInu@localhost:5432/BoardGameVault"
 
 engine = create_engine(URL_DATABASE)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 metadata = MetaData()
 
