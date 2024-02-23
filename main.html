@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BoardGameVault</title>
+    <!-- Include HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+    <button hx-get="http://127.0.0.1:8000/" hx-swap="afterend">Click</button>
+    <button hx-get="http://127.0.0.1:8000/items/412199" hx-swap="afterend">Click</button>
+    <table>
+        <tr id="replaceMe">
+            <td colspan="3">
+                <button class='btn' hx-get="http://127.0.0.1:8000/items/412199"
+                            hx-target="#replaceMe"
+                            hx-swap="afterend">
+                    Load More Agents... <img class="htmx-indicator" src="">
+                </button>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
