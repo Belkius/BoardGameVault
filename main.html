@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,18 +8,46 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body>
-    <button hx-get="http://127.0.0.1:8000/" hx-swap="afterend">Click</button>
-    <button hx-get="http://127.0.0.1:8000/items/412199" hx-swap="afterend">Click</button>
-    <table>
-        <tr id="replaceMe">
-            <td colspan="3">
-                <button class='btn' hx-get="http://127.0.0.1:8000/items/412199"
-                            hx-target="#replaceMe"
-                            hx-swap="afterend">
-                    Load More Agents... <img class="htmx-indicator" src="">
-                </button>
-            </td>
-        </tr>
-    </table>
+    lowest item 412199
+
+    <p>
+        Find by ID
+    </p>
+
+    <form hx-post="http://127.0.0.1:8000/item" hx-trigger="submit" hx-target="#data-table" hx-swap="innerHTML">
+      <label for="id">Enter ID:</label>
+      <input type="number" id="id" name="id" required>
+      <button type="submit">Fetch Data</button>
+    </form>
+
+    <p>
+        Fetch all items
+    </p>
+
+    <form hx-post="http://127.0.0.1:8000/items" hx-trigger="submit" hx-target="#data-table" hx-swap="innerHTML">
+      <label for="skip">Skip first:</label>
+      <input type="number" id="skip" name="skip" value="0" required>
+      <label for="limit">Limit shown:</label>
+      <input type="number" id="limit" name="limit" value="10" required>
+      <button type="submit">Fetch Data</button>
+    </form>
+
+    <table id="data-table"></table>
+
+
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
 </body>
 </html>

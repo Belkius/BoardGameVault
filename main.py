@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Response
+from fastapi import FastAPI, HTTPException, Depends, Response, Form
 from pydantic import BaseModel
 from typing import List, Annotated
 from database import SessionLocal
@@ -6,6 +6,7 @@ import database
 from sqlalchemy.orm import Session
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+import templates
 
 
 class Boardgame_pydantic(BaseModel):
@@ -50,7 +51,7 @@ app = FastAPI()
 #     "http://localhost",
 #     "http://localhost:8080",
 # ]
-origins = ['*']
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -59,6 +60,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 def get_db():
     db = SessionLocal()
@@ -70,41 +72,53 @@ def get_db():
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
-@app.get("/world", response_class=HTMLResponse)
-async def world():
-    return """
-        <title>...world</title>
-        <h1>...world</h1>
-    """
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    return """
-    <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BoardGameVault</title>
-    <!-- Include HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-</head>
-<body>
-    <button hx-get="http://127.0.0.1:8000/" hx-swap="afterend">Click</button>
-    <button hx-get="http://127.0.0.1:8000/items/412199" hx-swap="afterend">Click</button>
-<tr id="replaceMe">
-  <td colspan="3">
-    <button class='btn' hx-get="http://127.0.0.1:8000/items/412199"
-                        hx-target="#replaceMe"
-                        hx-swap="afterend">
-         Load More Agents... <img class="htmx-indicator" src="">
-    </button>
-  </td>
-</tr>
-</body>
-</html>
-    """
+
+@app.post("/item", response_class=HTMLResponse)
+async def root(id: Annotated[int, Form()], db: db_dependency):
+    item = (
+        db.query(database.Boardgame).filter(database.Boardgame.c.item_id == id).first()
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    response = templates.item_header() + templates.item(item)
+    return response
 
 
-@app.get("/items/all", response_model=list[Boardgame_pydantic], response_model_exclude_unset=True)
+# @app.post("/items", response_model=HTMLResponse)
+# async def read_items(db: db_dependency, skip: Annotated[int, Form()], limit: Annotated[int, Form()]):
+#     items = db.query(database.Boardgame).offset(skip).limit(limit).all()
+#     if not items:
+#         raise HTTPException(status_code=404, detail="Items not found")
+#     response = templates.item_header()
+#     for item in items:
+#         response += templates.item(item)
+#     return response
+
+
+@app.post("/items", response_class=HTMLResponse)
+async def read_items(
+    skip: Annotated[int, Form()], limit: Annotated[int, Form()], db: db_dependency
+):
+    items = (
+        db.query(database.Boardgame)
+        .order_by(database.Boardgame.c.bayes_average.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    if not items:
+        raise HTTPException(status_code=404, detail="Items not found")
+    response = templates.item_header()
+    for item in items:
+        response += templates.item(item)
+    return response
+
+
+@app.get(
+    "/items/all",
+    response_model=list[Boardgame_pydantic],
+    response_model_exclude_unset=True,
+)
 async def read_items(db: db_dependency, skip: int = 0, limit: int = 10):
     items = db.query(database.Boardgame).offset(skip).limit(limit).all()
     if not items:
@@ -112,17 +126,25 @@ async def read_items(db: db_dependency, skip: int = 0, limit: int = 10):
     return items
 
 
-@app.get("/items/{id}", response_model=Boardgame_pydantic, response_model_exclude_unset=True)
+@app.get(
+    "/items/{id}", response_model=Boardgame_pydantic, response_model_exclude_unset=True
+)
 async def read_items(id: int, db: db_dependency):
-    items = db.query(database.Boardgame).filter(database.Boardgame.c.item_id == id).first()
+    items = (
+        db.query(database.Boardgame).filter(database.Boardgame.c.item_id == id).first()
+    )
     if not items:
         raise HTTPException(status_code=404, detail="Item not found")
     return items
 
 
-@app.patch("/items/{id}", response_model=Boardgame_pydantic, response_model_exclude_unset=True)
+@app.patch(
+    "/items/{id}", response_model=Boardgame_pydantic, response_model_exclude_unset=True
+)
 async def update_item(id: int, db: db_dependency):
-    item = db.query(database.Boardgame).filter(database.Boardgame.c.item_id == id).first()
+    item = (
+        db.query(database.Boardgame).filter(database.Boardgame.c.item_id == id).first()
+    )
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     item.owned = not item.owned
