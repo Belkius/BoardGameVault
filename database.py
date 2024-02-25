@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy import insert, select
+
 # from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (
     Table,
@@ -93,15 +94,20 @@ Boardgame = Table(
 def create_database_tables():
     metadata.create_all(engine)
 
+
 def insert_items_data(game_data):
     with engine.begin() as conn:
         for id, data in game_data.items():
-            existing_game = conn.execute(select(Boardgame).where(Boardgame.c.item_id == id)).fetchone()
+            existing_game = conn.execute(
+                select(Boardgame).where(Boardgame.c.item_id == id)
+            ).fetchone()
             if not existing_game:
                 conn.execute(insert(Boardgame).values(data))
 
 
 def get_highest_id():
     with engine.begin() as conn:
-        highest_id = conn.execute(select(Boardgame).order_by(Boardgame.c.item_id.desc())).first()
+        highest_id = conn.execute(
+            select(Boardgame).order_by(Boardgame.c.item_id.desc())
+        ).first()
         return highest_id.item_id

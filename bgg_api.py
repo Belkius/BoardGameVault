@@ -4,7 +4,6 @@ from database import Boardgame, insert_items_data, get_highest_id
 import time
 
 
-
 def parse_games_data(xml_data: object):
     items_data = {}
     root = ET.fromstring(xml_data)
