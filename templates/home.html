@@ -3,14 +3,10 @@
 {% block style %}
 
     <style>
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
         th, td {
             border: 1px solid black;
             padding: 8px;
-            text-align: left;
+            text-align: center;
         }
         tr:nth-child(even) {
             background-color: #f2f2f2;
@@ -21,7 +17,7 @@
 
 {% block content %}
     <div class="flex flex-col justify-center mx-auto text-gray-200">
-        <div class="flex justify-center mx-auto">
+        <div class="flex justify-center mx-auto p-4">
             <p>
                 Find by ID
             </p>
@@ -43,10 +39,32 @@
               <input type="number" id="limit" name="limit" value="10" required>
               <button type="submit">Fetch Data</button>
             </form>
+
+
+            <br>
+
+
+            <h3>
+              Search  by name
+              <span class="htmx-indicator">
+                Searching...
+              </span>
+            </h3>
+
+           <!--//if you want to push the searched data to the url address add this
+           hx-push-url="true" -->
+            <input class="form-control" type="text"
+               name="search" placeholder="Search..."
+               value="{{ search }}"
+               hx-get="/search"
+               hx-trigger="input changed delay:500ms, search"
+               hx-target="#data-table"
+               hx-indicator=".htmx-indicator">
+
         </div>
 
         <div class="w-9/10 mx-auto p-4">
-            <table id="data-table"></table>
+            <table id="data-table" class="border-collapse w-full table-auto"></table>
         </div>
     </div>
 

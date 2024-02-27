@@ -1,10 +1,17 @@
 {% include 'item_header.html' %}
 {% for item in items %}
 <tr>
-    <td>{{ item.name }}</td>
+    <td class="flex justify-center"><img src={{ item.thumbnail if item.thumbnail else "http://localhost:8000/static/no_image.png" }} alt={{ item.name }}></td>
+    <td><a href="https://boardgamegeek.com/{{ item.type }}/{{ item.item_id }}">{{ item.name }}</a></td>
     <td>{{ item.item_id }}</td>
     <td>{{ item.type }}</td>
-    <td>{{ item.owned }}</td>
-    <td><img src={{ item.thumbnail if item.thumbnail else "http://localhost:8000/static/no_image.png" }} alt={{ item.name }}></td>
+    <td>{% if item.minplayers > 0 %}{{ item.minplayers }}-{{ item.maxplayers }}{% endif %}</td>
+    <td>{{ item.average_rating }}</td>
+    <td>{{ item.bayes_average }}</td>
+    <td>{{ item.average_weight }}</td>
+    <td>
+        <input type="checkbox" id="wned-{{ item.item_id }}" {% if item.owned %}checked{% endif %}
+               hx-patch="/items/update/{{ item.item_id }}" hx-trigger="click">
+    </td>
 </tr>
 {% endfor %}

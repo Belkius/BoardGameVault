@@ -10,6 +10,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import update, select
 
 
 class BoardgamePydantic(BaseModel):
@@ -113,6 +114,36 @@ async def read_items(
     context = {"request": request, "items": items}
     return templates.TemplateResponse("item.html", context)
 
+@app.get("/search", response_class=HTMLResponse)
+async def read_items(
+    request: Request, search: str, db: db_dependency
+):
+    items = (
+        db.query(database.Boardgame)
+        .order_by(database.Boardgame.c.bayes_average.desc())
+        .filter(database.Boardgame.c.name.icontains(search))
+        .limit(200)
+        .all()
+    )
+    if not items:
+        raise HTTPException(status_code=404, detail="Items not found")
+    context = {"request": request, "items": items}
+    return templates.TemplateResponse("item.html", context)
+
+
+@app.patch(
+    "/items/update/{updated_id}",  response_model_exclude_unset=True
+)
+async def update_item(updated_id: int, db: db_dependency):
+    item = (
+        db.query(database.Boardgame).filter(database.Boardgame.c.item_id == updated_id).first()
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    database.update_item_ownership(updated_id)
+
+
+# Raw data endpoints
 
 @app.get(
     "/items/all",
@@ -136,17 +167,3 @@ async def read_items(searched_id: int, db: db_dependency):
     if not items:
         raise HTTPException(status_code=404, detail="Item not found")
     return items
-
-
-@app.patch(
-    "/items/{updated_id}", response_model=BoardgamePydantic, response_model_exclude_unset=True
-)
-async def update_item(updated_id: int, db: db_dependency):
-    item = (
-        db.query(database.Boardgame).filter(database.Boardgame.c.item_id == updated_id).first()
-    )
-    if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
-    item.owned = not item.owned
-    db.commit()
-    return item

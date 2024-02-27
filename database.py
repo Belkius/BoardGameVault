@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine, MetaData, update
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import insert, select
 
@@ -62,11 +62,24 @@ def create_database_tables():
 def insert_items_data(game_data):
     with engine.begin() as conn:
         for new_item_id, data in game_data.items():
-            existing_game = conn.execute(
-                select(Boardgame).where(Boardgame.c.item_id == new_item_id)
-            ).fetchone()
-            if not existing_game:
-                conn.execute(insert(Boardgame).values(data))
+            is_boardgame = data["type"] == "boardgame" or data["type"] == "boardgameexpansion" or data["type"] == "boardgameaccessory"
+            if is_boardgame:
+                existing_game = conn.execute(
+                    select(Boardgame).where(Boardgame.c.item_id == new_item_id)
+                ).fetchone()
+                if not existing_game:
+                    conn.execute(insert(Boardgame).values(data))
+
+
+def update_item_ownership(item_id):
+    with engine.begin() as conn:
+        current_status = conn.execute(
+            select(Boardgame.c.owned).where(Boardgame.c.item_id == item_id)
+        ).scalar()
+        new_status = not current_status
+        conn.execute(
+            update(Boardgame).where(Boardgame.c.item_id == item_id).values(owned= new_status)
+        )
 
 
 def get_highest_id():

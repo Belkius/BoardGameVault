@@ -133,6 +133,6 @@ def keep_server_healthy(seconds: int):
 
 
 # last_game_id = 414830
-last_game_id = 412199
+last_game_id = 400199
 get_new_data(last_game_id)
 print(get_highest_id())
