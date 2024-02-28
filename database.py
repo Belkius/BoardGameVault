@@ -62,7 +62,11 @@ def create_database_tables():
 def insert_items_data(game_data):
     with engine.begin() as conn:
         for new_item_id, data in game_data.items():
-            is_boardgame = data["type"] == "boardgame" or data["type"] == "boardgameexpansion" or data["type"] == "boardgameaccessory"
+            is_boardgame = (
+                data["type"] == "boardgame"
+                or data["type"] == "boardgameexpansion"
+                or data["type"] == "boardgameaccessory"
+            )
             if is_boardgame:
                 existing_game = conn.execute(
                     select(Boardgame).where(Boardgame.c.item_id == new_item_id)
@@ -78,7 +82,9 @@ def update_item_ownership(item_id):
         ).scalar()
         new_status = not current_status
         conn.execute(
-            update(Boardgame).where(Boardgame.c.item_id == item_id).values(owned= new_status)
+            update(Boardgame)
+            .where(Boardgame.c.item_id == item_id)
+            .values(owned=new_status)
         )
 
 

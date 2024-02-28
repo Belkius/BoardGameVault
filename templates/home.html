@@ -12,12 +12,39 @@
             background-color: #f2f2f2;
             color: black;
         }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
     </style>
 {% endblock %}
 
 {% block content %}
     <div class="flex flex-col justify-center mx-auto text-gray-200">
-        <div class="flex justify-center mx-auto p-4">
+        <div class="flex justify-center gap-20 mx-auto p-4">
+
+
+            <div class="flex flex-col items-center justify-start gap-4 mx-auto p-4 font-semibold">
+                <h3>
+                  Search  by name
+                </h3>
+               <!--//if you want to push the searched data to the url address add this
+               hx-push-url="true" -->
+                <input class="form-control text-center" type="text"
+                   name="search" placeholder="Search..."
+                   value="{{ search }}"
+                   hx-get="/search"
+                   hx-trigger="input changed delay:500ms, search"
+                   hx-target="#data-table"
+                   hx-indicator=".htmx-indicator">
+            </div>
+<!--
             <p>
                 Find by ID
             </p>
@@ -27,44 +54,38 @@
               <input type="number" id="contentInput" name="searched_id" required>
               <button type="submit">Fetch Data</button>
             </form>
+-->
+            <div class="grid grid-cols-1 place-items-center justify-between gap-4 mx-auto p-4 font-semibold">
+                <p>
+                    Get Top Games
+                </p>
 
-            <p>
-                Fetch all items
-            </p>
+                <form id="loadFirst" hx-post="http://127.0.0.1:8000/items" hx-trigger="submit" hx-target="#data-table" hx-swap="innerHTML"
+                    class="grid grid-cols-1 place-items-center justify-between gap-4 mx-auto font-semibold">
+                  <div class="flex items-center gap-4">
+                    <label for="skip">Skip: </label>
+                    <input class="w-14 text-gray-700 text-center" type="number" id="skip" name="skip" value="0" required>
 
-            <form hx-post="http://127.0.0.1:8000/items" hx-trigger="submit" hx-target="#data-table" hx-swap="innerHTML">
-              <label for="skip">Skip first:</label>
-              <input type="number" id="skip" name="skip" value="0" required>
-              <label for="limit">Limit shown:</label>
-              <input type="number" id="limit" name="limit" value="10" required>
-              <button type="submit">Fetch Data</button>
-            </form>
-
-
-            <br>
-
-
-            <h3>
-              Search  by name
-              <span class="htmx-indicator">
-                Searching...
-              </span>
-            </h3>
-
-           <!--//if you want to push the searched data to the url address add this
-           hx-push-url="true" -->
-            <input class="form-control" type="text"
-               name="search" placeholder="Search..."
-               value="{{ search }}"
-               hx-get="/search"
-               hx-trigger="input changed delay:500ms, search"
-               hx-target="#data-table"
-               hx-indicator=".htmx-indicator">
-
+                    <label for="limit">Limit: </label>
+                    <input class="w-14 text-gray-700 text-center" type="number" id="limit" name="limit" value="10" required>
+                  </div>
+                  <button class="bg-slate-400 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded" type="submit">Fetch</button>
+                </form>
+            </div>
         </div>
 
         <div class="w-9/10 mx-auto p-4">
             <table id="data-table" class="border-collapse w-full table-auto"></table>
+
+            <form id="loadMore" hx-post="http://127.0.0.1:8000/items" hx-trigger="submit" hx-target="#data-table" hx-swap="beforeend"
+                  class="hidden grid grid-cols-1 place-items-center justify-between gap-4 mx-auto font-semibold">
+                 <div class="flex items-center gap-4">
+                    <input class="w-14 text-gray-700 text-center" type="hidden" id="loadLimit" name="limit" value="10" required>
+                    <input class="w-14 text-gray-700 text-center" type="hidden" id="loadSkip" name="skip" value="0" required>
+                 </div>
+                 <button class="bg-slate-400 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded" type="submit">Load more...</button>
+             </form>
+
         </div>
     </div>
 
@@ -75,5 +96,29 @@
     htmx.on('htmx:afterSwap', function(event) {
       document.getElementById("contentInput").value = ""
     });
+
+    var loadFirst = document.getElementById("loadFirst");
+    var loadMore = document.getElementById("loadMore");
+
+    //Check the value of the limit input and set it to the limit for loading more values
+    if (loadFirst){
+        loadFirst.addEventListener("submit", function(event) {
+            var limitValue = document.getElementById("limit").value;
+            var skipValue = document.getElementById("skip").value;
+            document.getElementById("loadLimit").value = limitValue;
+            document.getElementById("loadSkip").value = skipValue;
+
+            loadMore.classList.remove("hidden");
+        });
+    }
+
+    //Increment the skip value for loading more values
+    if (loadMore){
+        loadMore.addEventListener("submit", function(event) {
+            var limitValue = document.getElementById("loadLimit").value;
+            var skipValue = document.getElementById("loadSkip").value;
+            document.getElementById("loadSkip").value = parseInt(skipValue) + parseInt(limitValue);
+        });
+    }
   </script>
 {% endblock %}
