@@ -55,11 +55,11 @@ Boardgame = Table(
 )
 
 
-def create_database_tables():
+def create_database_tables() -> None:
     metadata.create_all(engine)
 
 
-def insert_items_data(game_data):
+def insert_items_data(game_data: dict) -> None:
     with engine.begin() as conn:
         for new_item_id, data in game_data.items():
             is_boardgame = (
@@ -75,7 +75,7 @@ def insert_items_data(game_data):
                     conn.execute(insert(Boardgame).values(data))
 
 
-def update_item_ownership(item_id):
+def update_item_ownership(item_id: int) -> None:
     with engine.begin() as conn:
         current_status = conn.execute(
             select(Boardgame.c.owned).where(Boardgame.c.item_id == item_id)
@@ -88,7 +88,7 @@ def update_item_ownership(item_id):
         )
 
 
-def get_highest_id():
+def get_highest_id() -> int:
     with engine.begin() as conn:
         highest_id = conn.execute(
             select(Boardgame).order_by(Boardgame.c.item_id.desc())

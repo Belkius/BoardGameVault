@@ -1,15 +1,13 @@
 from fastapi import FastAPI, HTTPException, Depends, Request, Response, Form
-from fastapi.staticfiles import StaticFiles
-import uuid
-from pydantic import BaseModel
-from typing import List, Annotated
-from database import SessionLocal
-import database
-from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import update, select
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from typing import Annotated, Generator
+import uuid
+import database
 
 
 class BoardgamePydantic(BaseModel):
@@ -62,8 +60,8 @@ app.add_middleware(
 )
 
 
-def get_db():
-    db = SessionLocal()
+def get_db() -> Generator:
+    db = database.SessionLocal()
     try:
         yield db
     finally:
@@ -74,7 +72,7 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 
 @app.get("/")
-async def home(request: Request):
+async def home(request: Request) -> Response:
     session_key = request.cookies.get("session_key", uuid.uuid4().hex)
     context = {"request": request, "title": "Home"}
     response = templates.TemplateResponse("home.html", context)
@@ -85,7 +83,7 @@ async def home(request: Request):
 @app.post("/item", response_class=HTMLResponse)
 async def get_item(
     request: Request, searched_id: Annotated[int, Form()], db: db_dependency
-):
+) -> Response:
     session_key = request.cookies.get("session_key")
     item = (
         db.query(database.Boardgame)
@@ -104,7 +102,7 @@ async def read_items(
     skip: Annotated[int, Form()],
     limit: Annotated[int, Form()],
     db: db_dependency,
-):
+) -> Response:
     items = (
         db.query(database.Boardgame)
         .order_by(database.Boardgame.c.bayes_average.desc())
@@ -119,7 +117,7 @@ async def read_items(
 
 
 @app.get("/search", response_class=HTMLResponse)
-async def read_items(request: Request, search: str, db: db_dependency):
+async def search_items(request: Request, search: str, db: db_dependency):
     items = (
         db.query(database.Boardgame)
         .order_by(database.Boardgame.c.bayes_average.desc())
@@ -129,6 +127,20 @@ async def read_items(request: Request, search: str, db: db_dependency):
     )
     if not items:
         raise HTTPException(status_code=404, detail="Items not found")
+    context = {"request": request, "items": items}
+    return templates.TemplateResponse("item.html", context)
+
+
+@app.get("/owned", response_class=HTMLResponse)
+async def owned_items(request: Request, db: db_dependency):
+    items = (
+        db.query(database.Boardgame)
+        .order_by(database.Boardgame.c.name.desc())
+        .filter(database.Boardgame.c.owned == True)
+        .all()
+    )
+    if not items:
+        raise HTTPException(status_code=404, detail="No owned items found")
     context = {"request": request, "items": items}
     return templates.TemplateResponse("item.html", context)
 
