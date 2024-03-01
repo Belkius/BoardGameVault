@@ -27,6 +27,9 @@ Boardgame = Table(
     Column("type", String),
     Column("name", String),
     Column("owned", Boolean, default=False),
+    Column("times_played", Integer, default=0),
+    Column("dates_played", Text),
+    Column("comments", Text),
     Column("alternate_names", Text),
     Column("description", Text),
     Column("yearpublished", Integer),
@@ -85,6 +88,22 @@ def update_item_ownership(item_id: int) -> None:
             update(Boardgame)
             .where(Boardgame.c.item_id == item_id)
             .values(owned=new_status)
+        )
+
+
+def update_times_played(item_id: int, minus: bool) -> None:
+    with engine.begin() as conn:
+        current_status = conn.execute(
+            select(Boardgame.c.times_played).where(Boardgame.c.item_id == item_id)
+        ).scalar()
+        if minus:
+            new_status = current_status - 1
+        else:
+            new_status = current_status + 1
+        conn.execute(
+            update(Boardgame)
+            .where(Boardgame.c.item_id == item_id)
+            .values(times_played=new_status)
         )
 
 

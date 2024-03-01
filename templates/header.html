@@ -1,5 +1,41 @@
-<div class="bg-slate-800">
-    <div class="p-5">
-        <a href="" class="text-2xl text-gray-200 hover:text-gray-200 hover:no-underline">Board Game Vault</a>
+<div class="flex w-full bg-slate-800 text-gray-200">
+    <div class="flex-none w-auto m-2 ml-10 p-5">
+        <a href="" class="w-auto mx-auto text-2xl hover:text-gray-200 hover:no-underline">Board Game Vault</a>
+    </div>
+
+    <div class="flex w-full items-center justify-end place-self-end gap-5 mr-10 p-2">
+
+        <div class="flex flex-col gap-4 p-4 font-semibold">
+           <!--//if you want to push the searched data to the url address add this
+           hx-push-url="true" -->
+            <input class="form-control bg-slate-700 rounded-lg text-center placeholder-gray-200" type="text"
+               name="search" placeholder="Search..."
+               value="{{ search }}"
+               hx-get="/search"
+               hx-trigger="input changed delay:500ms, search"
+               hx-target="#data-table"
+               hx-indicator=".htmx-indicator">
+        </div>
+
+        <div class="grid grid-cols-1 place-items-center gap-4 p-4 font-semibold">
+            <button id="showMyGames" hx-get="http://127.0.0.1:8000/owned" hx-target="#data-table" hx-swap="innerHTML"
+                    class="hover:text-gray-400 font-bold py-2 px-4" type="submit">
+                Show My Games
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 place-items-center border-2 border-slate-700 rounded-lg gap-2 p-4 font-semibold">
+            <form id="loadFirst" hx-post="http://127.0.0.1:8000/items" hx-trigger="submit" hx-target="#data-table" hx-swap="innerHTML"
+                class="grid grid-cols-1 place-items-center justify-between gap-4 mx-auto font-semibold">
+              <div class="flex items-center gap-4">
+                <label for="skip">Skip: </label>
+                <input class="w-14 bg-slate-700 rounded-lg text-center" type="number" id="skip" name="skip" value="0" required>
+
+                <label for="limit">Limit: </label>
+                <input class="w-14 bg-slate-700 rounded-lg text-center" type="number" id="limit" name="limit" value="10" required>
+                <button class="hover:text-gray-400 font-bold py-2 px-4" type="submit">Show Best</button>
+              </div>
+            </form>
+        </div>
     </div>
 </div>
