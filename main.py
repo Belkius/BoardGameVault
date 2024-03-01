@@ -17,6 +17,9 @@ class BoardgamePydantic(BaseModel):
     type: str
     name: str
     owned: bool
+    times_played: int
+    dates_played: str
+    comments: str
     alternate_names: str
     description: str
     yearpublished: int
@@ -84,7 +87,6 @@ async def home(request: Request) -> Response:
 async def get_item(
     request: Request, searched_id: Annotated[int, Form()], db: db_dependency
 ) -> Response:
-    session_key = request.cookies.get("session_key")
     item = (
         db.query(database.Boardgame)
         .filter(database.Boardgame.c.item_id == searched_id)
@@ -105,6 +107,7 @@ async def read_items(
 ) -> Response:
     items = (
         db.query(database.Boardgame)
+        .filter(database.Boardgame.c.type == "boardgame")
         .order_by(database.Boardgame.c.bayes_average.desc())
         .offset(skip)
         .limit(limit)
@@ -120,7 +123,8 @@ async def read_items(
 async def search_items(request: Request, search: str, db: db_dependency):
     items = (
         db.query(database.Boardgame)
-        .order_by(database.Boardgame.c.bayes_average.desc())
+        .filter(database.Boardgame.c.name != "-1")
+        .order_by(database.Boardgame.c.owned.desc(), database.Boardgame.c.name)
         .filter(database.Boardgame.c.name.icontains(search))
         .limit(200)
         .all()
@@ -145,7 +149,7 @@ async def owned_items(request: Request, db: db_dependency):
     return templates.TemplateResponse("item.html", context)
 
 
-@app.patch("/items/update/{updated_id}", response_model_exclude_unset=True)
+@app.patch("/item/update_owned/{updated_id}", response_model_exclude_unset=True)
 async def update_item(updated_id: int, db: db_dependency):
     item = (
         db.query(database.Boardgame)
@@ -155,6 +159,31 @@ async def update_item(updated_id: int, db: db_dependency):
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     database.update_item_ownership(updated_id)
+
+@app.post("/item/update_played/add/{updated_id}", response_model_exclude_unset=True)
+async def update_item(updated_id: int, db: db_dependency):
+    item = (
+        db.query(database.Boardgame)
+        .filter(database.Boardgame.c.item_id == updated_id)
+        .first()
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    database.update_times_played(updated_id, False)
+    return item.times_played + 1
+
+
+@app.post("/item/update_played/subs/{updated_id}", response_model_exclude_unset=True)
+async def update_item(updated_id: int, db: db_dependency):
+    item = (
+        db.query(database.Boardgame)
+        .filter(database.Boardgame.c.item_id == updated_id)
+        .first()
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    database.update_times_played(updated_id, True)
+    return item.times_played - 1
 
 
 # Raw data endpoints
@@ -177,7 +206,7 @@ async def read_items(db: db_dependency, skip: int = 0, limit: int = 10):
     response_model=BoardgamePydantic,
     response_model_exclude_unset=True,
 )
-async def read_items(searched_id: int, db: db_dependency):
+async def read_items_id(searched_id: int, db: db_dependency):
     items = (
         db.query(database.Boardgame)
         .filter(database.Boardgame.c.item_id == searched_id)

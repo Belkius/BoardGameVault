@@ -26,7 +26,8 @@
 {% endblock %}
 
 {% block content %}
-    <div class="flex flex-col justify-center mx-auto text-gray-200">
+  <!--
+  <div class="flex flex-col justify-center mx-auto text-gray-200">
         <div class="flex justify-center gap-20 mx-auto p-4">
 
             <div class="grid grid-cols-1 place-items-center justify-between gap-4 mx-auto p-4 font-semibold">
@@ -40,8 +41,10 @@
                 <h3>
                   Search  by name
                 </h3>
+                -->
                <!--//if you want to push the searched data to the url address add this
                hx-push-url="true" -->
+<!--
                 <input class="form-control text-center text-gray-800" type="text"
                    name="search" placeholder="Search..."
                    value="{{ search }}"
@@ -69,6 +72,7 @@
                 </form>
             </div>
         </div>
+        -->
 
         <div class="w-9/10 mx-auto p-4">
             <table id="data-table" class="border-collapse w-full table-auto"></table>
@@ -79,7 +83,7 @@
                     <input class="w-14 text-gray-700 text-center" type="hidden" id="loadLimit" name="limit" value="10" required>
                     <input class="w-14 text-gray-700 text-center" type="hidden" id="loadSkip" name="skip" value="0" required>
                  </div>
-                 <button class="bg-slate-400 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded" type="submit">Load more...</button>
+                 <button class="bg-slate-400 hover:bg-slate-800 text-gray-200 font-bold py-2 px-4 rounded" type="submit">Load more...</button>
              </form>
 
         </div>
@@ -89,13 +93,10 @@
 
 {% block javascript %}
   <script>
-    htmx.on('htmx:afterSwap', function(event) {
-      document.getElementById("contentInput").value = ""
-    });
-
     var loadFirst = document.getElementById("loadFirst");
     var loadMore = document.getElementById("loadMore");
     var showMyGames = document.getElementById('showMyGames');
+    var timesPlayed = document.getElementsByClassName('times_played');
 
     if (showMyGames){
         showMyGames.addEventListener("click", function(event) {

@@ -133,7 +133,6 @@ def keep_server_healthy(seconds: int):
     # add more health checks here
 
 
-
 # last_game_id = 414830
 last_game_id = 290199
 get_new_data(last_game_id)

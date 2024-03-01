@@ -6,12 +6,19 @@
     <td>{{ item.item_id }}</td>
     <td>{{ item.type }}</td>
     <td>{% if item.minplayers > 0 %}{{ item.minplayers }}-{{ item.maxplayers }}{% endif %}</td>
-    <td>{{ item.average_rating }}</td>
     <td>{{ item.bayes_average }}</td>
     <td>{{ item.average_weight }}</td>
     <td>
-        <input type="checkbox" id="wned-{{ item.item_id }}" {% if item.owned %}checked{% endif %}
-               hx-patch="/items/update/{{ item.item_id }}" hx-trigger="click">
+        <input type="checkbox" {% if item.owned %}checked{% endif %}
+               hx-patch="/item/update_owned/{{ item.item_id }}" hx-trigger="click">
+    </td>
+    <td>
+        <button class="times_played" hx-post="/item/update_played/subs/{{ item.item_id }}" hx-target="#times{{item.item_id}}" hx-swap="innerHTML" type="submit">-</button>
+        <span id="times{{item.item_id}}">{% if item.times_played %}{{ item.times_played }}{% else %}0{% endif %}</span>
+        <button class="times_played" hx-post="/item/update_played/add/{{ item.item_id }}" hx-target="#times{{item.item_id}}" hx-swap="innerHTML" type="submit">+</button>
+    </td>
+    <td>
+        <text>{{ item.comments }}</text>
     </td>
 </tr>
 {% endfor %}
