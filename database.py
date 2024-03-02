@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, MetaData, update
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import insert, select
+from datetime import datetime
 
 from sqlalchemy import (
     Table,
@@ -96,14 +97,38 @@ def update_times_played(item_id: int, minus: bool) -> None:
         current_status = conn.execute(
             select(Boardgame.c.times_played).where(Boardgame.c.item_id == item_id)
         ).scalar()
-        if minus:
+        current_dates_played = conn.execute(
+            select(Boardgame.c.dates_played).where(Boardgame.c.item_id == item_id)
+        ).scalar()
+
+        dates_played_list = current_dates_played.split(",") if current_dates_played else []
+
+        if minus and current_status > 0:
             new_status = current_status - 1
-        else:
+            if dates_played_list:
+                dates_played_list.pop()
+        elif not minus:
             new_status = current_status + 1
+            dates_played_list.append(datetime.now().strftime("%Y-%m-%d"))
+
+        new_dates_played = ",".join(dates_played_list)
         conn.execute(
             update(Boardgame)
             .where(Boardgame.c.item_id == item_id)
-            .values(times_played=new_status)
+            .values(times_played=new_status, dates_played=new_dates_played)
+        )
+
+
+def update_comments(item_id: int, comment: str) -> None:
+    with engine.begin() as conn:
+        # current_comments = conn.execute(
+        #     select(Boardgame.c.comments).where(Boardgame.c.item_id == item_id)
+        # ).scalar()
+        new_comments = comment
+        conn.execute(
+            update(Boardgame)
+            .where(Boardgame.c.item_id == item_id)
+            .values(comments=new_comments)
         )
 
 

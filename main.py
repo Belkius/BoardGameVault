@@ -116,11 +116,11 @@ async def read_items(
     if not items:
         raise HTTPException(status_code=404, detail="Items not found")
     context = {"request": request, "items": items}
-    return templates.TemplateResponse("item.html", context)
+    return templates.TemplateResponse("item_table.html", context)
 
 
 @app.get("/search", response_class=HTMLResponse)
-async def search_items(request: Request, search: str, db: db_dependency):
+async def search_items(request: Request, search: str, db: db_dependency) -> Response:
     items = (
         db.query(database.Boardgame)
         .filter(database.Boardgame.c.name != "-1")
@@ -132,11 +132,11 @@ async def search_items(request: Request, search: str, db: db_dependency):
     if not items:
         raise HTTPException(status_code=404, detail="Items not found")
     context = {"request": request, "items": items}
-    return templates.TemplateResponse("item.html", context)
+    return templates.TemplateResponse("item_table.html", context)
 
 
 @app.get("/owned", response_class=HTMLResponse)
-async def owned_items(request: Request, db: db_dependency):
+async def owned_items(request: Request, db: db_dependency) -> Response:
     items = (
         db.query(database.Boardgame)
         .order_by(database.Boardgame.c.name.desc())
@@ -146,11 +146,11 @@ async def owned_items(request: Request, db: db_dependency):
     if not items:
         raise HTTPException(status_code=404, detail="No owned items found")
     context = {"request": request, "items": items}
-    return templates.TemplateResponse("item.html", context)
+    return templates.TemplateResponse("item_table.html", context)
 
 
 @app.patch("/item/update_owned/{updated_id}", response_model_exclude_unset=True)
-async def update_item(updated_id: int, db: db_dependency):
+async def update_item(updated_id: int, db: db_dependency) -> None:
     item = (
         db.query(database.Boardgame)
         .filter(database.Boardgame.c.item_id == updated_id)
@@ -161,7 +161,7 @@ async def update_item(updated_id: int, db: db_dependency):
     database.update_item_ownership(updated_id)
 
 @app.post("/item/update_played/add/{updated_id}", response_model_exclude_unset=True)
-async def update_item(updated_id: int, db: db_dependency):
+async def update_item(request: Request, updated_id: int, db: db_dependency) -> Response:
     item = (
         db.query(database.Boardgame)
         .filter(database.Boardgame.c.item_id == updated_id)
@@ -170,11 +170,17 @@ async def update_item(updated_id: int, db: db_dependency):
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     database.update_times_played(updated_id, False)
-    return item.times_played + 1
+    item = (
+        db.query(database.Boardgame)
+        .filter(database.Boardgame.c.item_id == updated_id)
+        .first()
+    )
+    context = {"request": request, "items": [item]}
+    return templates.TemplateResponse("item.html", context)
 
 
 @app.post("/item/update_played/subs/{updated_id}", response_model_exclude_unset=True)
-async def update_item(updated_id: int, db: db_dependency):
+async def update_item(request: Request, updated_id: int, db: db_dependency) -> Response:
     item = (
         db.query(database.Boardgame)
         .filter(database.Boardgame.c.item_id == updated_id)
@@ -183,8 +189,32 @@ async def update_item(updated_id: int, db: db_dependency):
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     database.update_times_played(updated_id, True)
-    return item.times_played - 1
+    item = (
+        db.query(database.Boardgame)
+        .filter(database.Boardgame.c.item_id == updated_id)
+        .first()
+    )
+    context = {"request": request, "items": [item]}
+    return templates.TemplateResponse("item.html", context)
 
+@app.post("/item/update_comments/{updated_id}", response_model_exclude_unset=True)
+async def update_item(request: Request,
+    comments: Annotated[str, Form()], updated_id: int, db: db_dependency) -> Response:
+    item = (
+        db.query(database.Boardgame)
+        .filter(database.Boardgame.c.item_id == updated_id)
+        .first()
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    database.update_comments(updated_id, comments)
+    item = (
+        db.query(database.Boardgame)
+        .filter(database.Boardgame.c.item_id == updated_id)
+        .first()
+    )
+    context = {"request": request, "items": [item]}
+    return templates.TemplateResponse("item.html", context)
 
 # Raw data endpoints
 
