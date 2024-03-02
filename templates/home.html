@@ -22,6 +22,10 @@
         input[type="number"] {
             -moz-appearance: textfield;
         }
+
+        textarea {
+            overflow: hidden;
+        }
     </style>
 {% endblock %}
 
@@ -96,7 +100,6 @@
     var loadFirst = document.getElementById("loadFirst");
     var loadMore = document.getElementById("loadMore");
     var showMyGames = document.getElementById('showMyGames');
-    var timesPlayed = document.getElementsByClassName('times_played');
 
     if (showMyGames){
         showMyGames.addEventListener("click", function(event) {

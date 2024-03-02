@@ -1,6 +1,5 @@
-{% include 'item_header.html' %}
 {% for item in items %}
-<tr>
+<tr id="item{{item.item_id}}">
     <td class="flex justify-center"><img src={{ item.thumbnail if item.thumbnail else "http://localhost:8000/static/no_image.png" }} alt={{ item.name }}></td>
     <td><a href="https://boardgamegeek.com/{{ item.type }}/{{ item.item_id }}">{{ item.name }}</a></td>
     <td>{{ item.item_id }}</td>
@@ -13,12 +12,27 @@
                hx-patch="/item/update_owned/{{ item.item_id }}" hx-trigger="click">
     </td>
     <td>
-        <button class="times_played" hx-post="/item/update_played/subs/{{ item.item_id }}" hx-target="#times{{item.item_id}}" hx-swap="innerHTML" type="submit">-</button>
-        <span id="times{{item.item_id}}">{% if item.times_played %}{{ item.times_played }}{% else %}0{% endif %}</span>
-        <button class="times_played" hx-post="/item/update_played/add/{{ item.item_id }}" hx-target="#times{{item.item_id}}" hx-swap="innerHTML" type="submit">+</button>
+        <button hx-post="/item/update_played/subs/{{ item.item_id }}" hx-target="#item{{item.item_id}}" hx-swap="outerHTML" type="submit">-</button>
+        <span>{% if item.times_played %}{{ item.times_played }}{% else %}0{% endif %}</span>
+        <button hx-post="/item/update_played/add/{{ item.item_id }}" hx-target="#item{{item.item_id}}" hx-swap="outerHTML" type="submit">+</button>
     </td>
     <td>
-        <text>{{ item.comments }}</text>
+        {% if item.dates_played %}
+            {% for date in item.dates_played.split(",") %}
+                <p>{{ date }}</p>
+            {% endfor %}
+        {% else %}
+            <p>Yet to play</p>
+        {% endif %}
+    </td>
+    <td class="overflow-hidden">
+        <form hx-post="/item/update_comments/{{ item.item_id }}" hx-trigger="submit" hx-target="#item{{item.item_id}}" hx-swap="outerHTML"
+                class="grid grid-cols-1 place-items-center justify-between">
+            <textarea id="comments" name="comments" class="text-center text-gray-800">
+                {{ item.comments }}
+            </textarea>
+            <button class="hover:text-gray-400 py-2" type="submit">Update</button>
+        </form>
     </td>
 </tr>
 {% endfor %}
