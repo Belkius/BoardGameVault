@@ -107,37 +107,36 @@ def get_api_data(game_id: str) -> str:
         "stats": 1,
     }
 
-    try:
-        response = requests.get(base_url, params=params)
-        response.raise_for_status()
-        return response.text
-    except requests.exceptions.HTTPError as err:
-        return f"HTTP Error: {err}"
-    except requests.exceptions.RequestException as err:
-        return f"Request Error: {err}"
+    while True:
+        try:
+            response = requests.get(base_url, params=params)
+            response.raise_for_status()
+            return response.text
+        except requests.exceptions.HTTPError as err:
+            print(f"HTTP Error: {err}. Retrying...")
+            keep_server_healthy(0.2)
+        except requests.exceptions.RequestException as err:
+            print(f"Request Error: {err}. Retrying...")
+            keep_server_healthy(0.2)
 
 
 def get_new_data(last_item_id: int) -> dict:
     highest_id = last_item_id
+    print(f"Downloading new items from item id {highest_id}.")
     while True:
         item_ids = ",".join([str(id) for id in range(highest_id, highest_id + 100)])
         api_response = get_api_data(item_ids)
         items_data = parse_games_data(api_response)
         if not items_data:
             break
+        print(f"----Downloaded items from item id {highest_id} to {highest_id + 100}----")
         highest_id += 100
         insert_items_data(items_data)
         keep_server_healthy(0.2)
-    print("done")
+    print("Downloaded all new items.")
     return items_data
 
 
 def keep_server_healthy(seconds: int):
     time.sleep(seconds)
     # add more health checks here
-
-
-# last_game_id = 414830
-last_game_id = 290199
-get_new_data(last_game_id)
-print(get_highest_id())
