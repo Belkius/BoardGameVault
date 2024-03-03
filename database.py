@@ -121,9 +121,6 @@ def update_times_played(item_id: int, minus: bool) -> None:
 
 def update_comments(item_id: int, comment: str) -> None:
     with engine.begin() as conn:
-        # current_comments = conn.execute(
-        #     select(Boardgame.c.comments).where(Boardgame.c.item_id == item_id)
-        # ).scalar()
         new_comments = comment
         conn.execute(
             update(Boardgame)
@@ -137,4 +134,6 @@ def get_highest_id() -> int:
         highest_id = conn.execute(
             select(Boardgame).order_by(Boardgame.c.item_id.desc())
         ).first()
+    if highest_id:
         return highest_id.item_id
+    return 0

@@ -4,49 +4,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
 from typing import Annotated, Generator
 import uuid
+import bgg_api
 import database
+from startup import check_db_connection, check_table_exists
+from models import BoardgamePydantic
 
-
-class BoardgamePydantic(BaseModel):
-    __tablename__ = "boardgames"
-
-    item_id: int
-    type: str
-    name: str
-    owned: bool
-    times_played: int
-    dates_played: str
-    comments: str
-    alternate_names: str
-    description: str
-    yearpublished: int
-    minplayers: int
-    maxplayers: int
-    playingtime: int
-    minplaytime: int
-    maxplaytime: int
-    age: int
-    categories: str
-    mechanics: str
-    families: str
-    integrations: str
-    implementations: str
-    designers: str
-    artists: str
-    publishers: str
-    users_rated: int
-    average_rating: float
-    bayes_average: float
-    bgg_rank: int
-    num_weights: int
-    average_weight: float
-    thumbnail: str
-    image: str
-
-
+# create FastAPI app
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
@@ -62,7 +27,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Check database connection and table existence
+check_db_connection(database.engine)
+check_table_exists("boardgames", database.engine)
 
+# Get new data from BGG API
+last_id = 400000
+bgg_api.get_new_data(last_id)
+
+
+# Dependency to get the database session
 def get_db() -> Generator:
     db = database.SessionLocal()
     try:
@@ -74,6 +48,7 @@ def get_db() -> Generator:
 db_dependency = Annotated[Session, Depends(get_db)]
 
 
+# Routes
 @app.get("/")
 async def home(request: Request) -> Response:
     session_key = request.cookies.get("session_key", uuid.uuid4().hex)
@@ -85,7 +60,7 @@ async def home(request: Request) -> Response:
 
 @app.post("/item", response_class=HTMLResponse)
 async def get_item(
-    request: Request, searched_id: Annotated[int, Form()], db: db_dependency
+        request: Request, searched_id: Annotated[int, Form()], db: db_dependency
 ) -> Response:
     item = (
         db.query(database.Boardgame)
@@ -100,10 +75,10 @@ async def get_item(
 
 @app.post("/items", response_class=HTMLResponse)
 async def read_items(
-    request: Request,
-    skip: Annotated[int, Form()],
-    limit: Annotated[int, Form()],
-    db: db_dependency,
+        request: Request,
+        skip: Annotated[int, Form()],
+        limit: Annotated[int, Form()],
+        db: db_dependency,
 ) -> Response:
     items = (
         db.query(database.Boardgame)
@@ -139,7 +114,7 @@ async def search_items(request: Request, search: str, db: db_dependency) -> Resp
 async def owned_items(request: Request, db: db_dependency) -> Response:
     items = (
         db.query(database.Boardgame)
-        .order_by(database.Boardgame.c.name.desc())
+        .order_by(database.Boardgame.c.name.asc())
         .filter(database.Boardgame.c.owned == True)
         .all()
     )
@@ -159,6 +134,7 @@ async def update_item(updated_id: int, db: db_dependency) -> None:
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     database.update_item_ownership(updated_id)
+
 
 @app.post("/item/update_played/add/{updated_id}", response_model_exclude_unset=True)
 async def update_item(request: Request, updated_id: int, db: db_dependency) -> Response:
@@ -197,9 +173,10 @@ async def update_item(request: Request, updated_id: int, db: db_dependency) -> R
     context = {"request": request, "items": [item]}
     return templates.TemplateResponse("item.html", context)
 
+
 @app.post("/item/update_comments/{updated_id}", response_model_exclude_unset=True)
 async def update_item(request: Request,
-    comments: Annotated[str, Form()], updated_id: int, db: db_dependency) -> Response:
+                      comments: Annotated[str, Form()], updated_id: int, db: db_dependency) -> Response:
     item = (
         db.query(database.Boardgame)
         .filter(database.Boardgame.c.item_id == updated_id)
@@ -216,9 +193,8 @@ async def update_item(request: Request,
     context = {"request": request, "items": [item]}
     return templates.TemplateResponse("item.html", context)
 
-# Raw data endpoints
 
-
+# Raw data routes
 @app.get(
     "/items/all",
     response_model=list[BoardgamePydantic],
