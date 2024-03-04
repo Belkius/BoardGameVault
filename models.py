@@ -1,6 +1,14 @@
 from pydantic import BaseModel
 
+
 class BoardgamePydantic(BaseModel):
+    """
+    Pydantic model representing a board game in the database.
+
+    This model maps to the columns in the 'boardgames' table and is used for data validation
+    and serialization/deserialization purposes.
+    """
+
     __tablename__ = "boardgames"
 
     item_id: int

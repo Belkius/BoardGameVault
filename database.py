@@ -13,14 +13,13 @@ from sqlalchemy import (
     Float,
 )
 
+# Database connection setup
 URL_DATABASE = "postgresql://postgres:ShibaInu@localhost:5432/BoardGameVault"
-
 engine = create_engine(URL_DATABASE)
-
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# Database table definition
 metadata = MetaData()
-
 Boardgame = Table(
     "boardgames",
     metadata,
@@ -60,10 +59,19 @@ Boardgame = Table(
 
 
 def create_database_tables() -> None:
+    """
+    Creates the database tables defined in the metadata object.
+    """
     metadata.create_all(engine)
 
 
 def insert_items_data(game_data: dict) -> None:
+    """
+    Inserts board games data into the database, checking for duplicates first.
+
+    Args:
+        game_data: A dictionary containing board games data.
+    """
     with engine.begin() as conn:
         for new_item_id, data in game_data.items():
             is_boardgame = (
@@ -80,6 +88,12 @@ def insert_items_data(game_data: dict) -> None:
 
 
 def update_item_ownership(item_id: int) -> None:
+    """
+    Toggles the ownership status (owned/not owned) of a game in the database.
+
+    Args:
+        item_id: The ID of the game to update.
+    """
     with engine.begin() as conn:
         current_status = conn.execute(
             select(Boardgame.c.owned).where(Boardgame.c.item_id == item_id)
@@ -93,6 +107,13 @@ def update_item_ownership(item_id: int) -> None:
 
 
 def update_times_played(item_id: int, minus: bool) -> None:
+    """
+    Updates the number of times a game has been played, incrementing or decrementing as needed.
+
+    Args:
+        item_id: The ID of the game to update.
+        minus: A boolean indicating whether to decrement the times played (True) or increment (False).
+    """
     with engine.begin() as conn:
         current_status = conn.execute(
             select(Boardgame.c.times_played).where(Boardgame.c.item_id == item_id)
@@ -101,7 +122,9 @@ def update_times_played(item_id: int, minus: bool) -> None:
             select(Boardgame.c.dates_played).where(Boardgame.c.item_id == item_id)
         ).scalar()
 
-        dates_played_list = current_dates_played.split(",") if current_dates_played else []
+        dates_played_list = (
+            current_dates_played.split(",") if current_dates_played else []
+        )
 
         if minus and current_status > 0:
             new_status = current_status - 1
@@ -120,6 +143,13 @@ def update_times_played(item_id: int, minus: bool) -> None:
 
 
 def update_comments(item_id: int, comment: str) -> None:
+    """
+    Updates the comments of a game in the database.
+
+    Args:
+        item_id: The ID of the game to update.
+        comment: The new comment to set for the item.
+    """
     with engine.begin() as conn:
         new_comments = comment
         conn.execute(
@@ -130,6 +160,12 @@ def update_comments(item_id: int, comment: str) -> None:
 
 
 def get_highest_id() -> int:
+    """
+    Retrieves the highest existing game ID from the boardgames table.
+
+    Returns:
+        The highest item ID, or 0 if the table is empty.
+    """
     with engine.begin() as conn:
         highest_id = conn.execute(
             select(Boardgame).order_by(Boardgame.c.item_id.desc())
