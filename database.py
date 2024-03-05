@@ -14,7 +14,7 @@ from sqlalchemy import (
 )
 
 # Database connection setup
-URL_DATABASE = "postgresql://postgres:ShibaInu@localhost:5432/BoardGameVault"
+URL_DATABASE = "postgresql://postgres:ShibaInu@127.0.0.1:5432/BoardGameVault"
 engine = create_engine(URL_DATABASE)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

@@ -73,10 +73,10 @@ async def home(request: Request) -> Response:
 @app.get("/get_new_data")
 async def start_new_data_job() -> None:
     """
-   Triggers the background job to fetch new data from BGG API.
+    Triggers the background job to fetch new data from BGG API.
 
-   Returns:
-       None
+    Returns:
+        None
     """
     new_data_job()
 
@@ -160,7 +160,7 @@ async def search_items(request: Request, search: str, db: db_dependency) -> Resp
 
     Returns:
         An HTTP response with the rendered item list template.
-        """
+    """
     items = (
         db.query(database.Boardgame)
         .filter(database.Boardgame.c.name != "-1")
