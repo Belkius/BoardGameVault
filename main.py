@@ -119,7 +119,7 @@ async def read_items(
     """
     Queries the database for a list of board game items.
     Filters items by type to get only boardgames and orders them by Bayes average descending.
-    Renders the item list template with the fetched item's data.
+    Renders the item list template with the fetched items data.
     Raises a 404 HTTP exception if no items are found.
 
     Args:
@@ -149,8 +149,8 @@ async def read_items(
 async def search_items(request: Request, search: str, db: db_dependency) -> Response:
     """
     Searches the database for board game items based on a search term.
-    The items are filtered and order first by ownership then by name.
-    Renders the item list template with the fetched item's data.
+    The items are filtered and ordered first by ownership then by name.
+    Renders the item list template with the fetched items data.
     Raises a 404 HTTP exception if no items are found.
 
     Args:
@@ -179,8 +179,8 @@ async def search_items(request: Request, search: str, db: db_dependency) -> Resp
 async def owned_items(request: Request, db: db_dependency) -> Response:
     """
     Queries the database for a list of owned board game items.
-    Items are order alphabetically.
-    Renders the item list template with the fetched item's data.
+    Items are ordered alphabetically.
+    Renders the item list template with the fetched items data.
     Raises a 404 HTTP exception if no owned items are found.
 
     Args:

@@ -1,6 +1,6 @@
 {% for item in items %}
 <tr id="item{{item.item_id}}">
-    <td class="flex justify-center"><img src={{ item.thumbnail if item.thumbnail else "http://localhost:8000/static/no_image.png" }} alt={{ item.name }}></td>
+    <td class="flex justify-center"><img src={{ item.thumbnail if item.thumbnail else "/static/no_image.png" }} alt={{ item.name }}></td>
     <td><a href="https://boardgamegeek.com/{{ item.type }}/{{ item.item_id }}">{{ item.name }}</a></td>
     <td>{{ item.item_id }}</td>
     <td>{{ item.type }}</td>
