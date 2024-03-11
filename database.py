@@ -1,3 +1,4 @@
+import os
 from sqlalchemy import create_engine, MetaData, update
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import insert, select
@@ -14,8 +15,8 @@ from sqlalchemy import (
 )
 
 # Database connection setup
-URL_DATABASE = "postgresql://postgres:ShibaInu@localhost:5432/BoardGameVault"
-engine = create_engine(URL_DATABASE)
+DATABASE_URL = os.getenv("DATABASE_URL")
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Database table definition
