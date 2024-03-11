@@ -13,6 +13,10 @@ I built it beacause all the sites on the market became too bloated for me. Also 
 - **Item Details**: If you need to know more about a game click it's title and it will open the games BGG site.
 - **Update Game Details**: Users can update the details of a boardgame, such as the number of times it has been played and any comments about the game.
 
+## Screenshots
+![img.png](ss_1.png)
+![img.png](ss_2.png)
+
 ## Tech Stack
 
 - **Python**
